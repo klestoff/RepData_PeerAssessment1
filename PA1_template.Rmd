@@ -118,9 +118,9 @@ head(steps_by_interval)
 with(
     steps_by_interval,
     plot(
-        interval, avg_steps, type = 'l', col = interval,
+        as.integer(interval), avg_steps, type = 'l', col = interval,
         main = "Daily activity pattern", 
-        xlab = "Interval", ylab = "Average number of steps"
+        xlab = "Interval", ylab = "Number of steps"
     )
 )
 ```
@@ -207,16 +207,78 @@ print(median_new)
 
 ### Conclusions
 1. The mean and median of the total number of steps taken per day on filled data list differs from the mean and median on original data.
-```{r, echo=TRUE}
+```{r, conclusions_1, echo=TRUE}
 abs(median_new - median_orig)
 
 abs(mean_new - mean_orig)
 ```
 
 2. The mean and median of the total number of steps taken per day on filled data list are equals:
-```{r, echo=TRUE}
+```{r, conclusions_2, echo=TRUE}
 median_new - mean_new
 ```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+### Mutate data
+```{r, actitvity_by_daytype, echo=TRUE}
+actitvity_by_daytype <-
+    new_steps %>%
+        mutate(
+            daytype = as.factor(
+                ifelse(
+                    weekdays(
+                        as.Date(date),
+                        abbreviate = TRUE
+                    ) %in% c("Sat", "Sun"),
+                    "weekend",
+                    "weekday"
+                )
+            )
+        )
+
+str(actitvity_by_daytype)
+
+actitvity_by_daytype_groupped <-
+    actitvity_by_daytype %>%
+        group_by(daytype, interval) %>%
+        summarize(avg_steps = mean(steps))
+
+head(actitvity_by_daytype_groupped)
+```
+
+### Plot
+```{r, actitvity_by_daytype_plot, echo=TRUE}
+par(mfrow = c(2, 1))
+
+with(
+    actitvity_by_daytype_groupped %>% filter(daytype == "weekend"),
+    plot(
+        as.integer(interval), avg_steps, type = 'l',
+        main = "Weekends", 
+        xlab = "Interval", ylab = "Number of steps"
+    )
+)
+
+with(
+    actitvity_by_daytype_groupped %>% filter(daytype == "weekday"),
+    plot(
+        as.integer(interval), avg_steps, type = 'l',
+        main = "Weekdays", 
+        xlab = "Interval", ylab = "Number of steps"
+    )
+)
+```
+
+### Plot 2
+```{r, actitvity_by_daytype_plot_2, echo=TRUE}
+library(ggplot2)
+ggplot2::ggplot(
+    actitvity_by_daytype_groupped,
+    ggplot2::aes(x = as.integer(interval), y = avg_steps)
+) + 
+    ggplot2::facet_grid(daytype ~ .) +
+    ggplot2::xlab("Interval") + 
+    ggplot2::ylab("Number of steps") + 
+    ggplot2::geom_line()
+```
